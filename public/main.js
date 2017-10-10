@@ -67,10 +67,10 @@ $(function() {
     // if there is a non-empty message and a socket connection
     if (message && connected) {
       $inputMessage.val('');
-      addChatMessage({
+      /*addChatMessage({
         username: username,
         message: message
-      });
+      });*/
       // tell server to execute 'new message' and send along one parameter
       socket.emit('new message', message);
     }
@@ -105,6 +105,7 @@ $(function() {
       .append($usernameDiv, $messageBodyDiv);
 
     addMessageElement($messageDiv, options);
+	console.log("added chat message");
   }
 
   // Adds the visual chat typing message
@@ -275,6 +276,7 @@ $(function() {
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', function (data) {
+	 
     addChatMessage(data);
   });
 

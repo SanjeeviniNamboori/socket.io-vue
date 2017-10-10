@@ -4,33 +4,42 @@
   <meta charset="UTF-8">
   <title>Socket.IO Chat Example</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/vue"> </script>
+
 </head>
 <body>
-  <ul class="pages">
-    <li class="chat page">
+
+  <ul id="pages" class="pages">
+    <li class="chat page" v-if="showPage">
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>
+      FFSFDFSFSDFDSF
       <input class="inputMessage" placeholder="Type here..."/>
     </li>
-	
-	<div class="room page" style="margin-left:70%;width:28%">
+
+	<div id="roompage" class="room page" style="margin-left:70%;width:28%">
       <div class="roomArea">
         <ul class="rooms"></ul>
       </div>
       <input class="inputRoom" placeholder="Add new room here..."/>
     </div>
-	
-    <li class="login page">
-      <div class="form">
-        <h3 class="title">What's your nickname?</h3>
-        <input class="usernameInput" type="text" maxlength="14" />
+
+    <li id="loginpage" class="login page" v-if="show">
+      <div id="form" class="form">
+        <h3 class="title">{{nickName}}</h3>
+        <input id="usernameInput" class="usernameInput" type="text" maxlength="14" v-on:keydown="getNickName" />
       </div>
     </li>
+
   </ul>
+
+
+
+
 
   <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/main.js"></script>
+  <script src="/main1.js"></script>
 </body>
 </html>
