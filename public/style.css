@@ -89,7 +89,8 @@ ul {
 /* Chat page */
 
 .chat.page {
-  display: none;
+  
+ /* display: none; */
 }
 
 /* Font */
@@ -136,7 +137,7 @@ ul {
 
 /* Input */
 
-.inputMessage {
+.inputMessage{
   border: 10px solid #000;
   bottom: 0;
   height: 60px;
@@ -145,5 +146,34 @@ ul {
   padding-left: 10px;
   position: absolute;
   right: 0;
-  width: 100%;
+  width: 98%;
+ 
+}
+
+.inputRoom{
+  border: 10px solid #000;
+  bottom: 0;
+  height: 60px;
+  left: 0;
+  outline: none;
+  padding-left: 10px;
+  position: absolute;
+  right: 0;
+  width: 97%;
+}
+
+
+.col-md-8{
+  background-color:  #e6ffff;
+}
+
+.col-md-4{
+  background-color: 	
+ 
+  
+  #f2f2f2;
+}
+.welcomeMessage{
+  align-content: center;
+  font-family:courier;
 }
