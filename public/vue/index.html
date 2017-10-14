@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Socket.IO Chat Example</title>
+    <link rel="stylesheet" href="/style.css">
+
+</head>
+
+<body>
+
+    <ul id="pages" class="pages">
+
+        <li class="chat page" v-if="showPage">
+            <div class="chatArea">
+                {{welcomeMessage}}
+                <ul class="messages">
+                    <li v-for="msg in messageElements">
+                        <span>{{msg.username}}</span>
+                    </li>
+                </ul>
+
+            </div>
+
+            <input class="inputMessage" :placeholder="messagePlaceHolder" v-model="userMessage" @change="(e)=>{ sendMessage(e) }"> </input>
+        </li>
+
+        <div id="roompage" class="room page" style="margin-left:70%;width:28%">
+            <div class="roomArea">
+                <ul class="rooms"></ul>
+            </div>
+            <input class="inputRoom" :placeholder="roomPlaceHolder"> </input>
+        </div>
+
+        <li id="loginpage" class="login page" v-if="show">
+            <div id="form" class="form">
+                <h3 class="title">{{nickName}}</h3>
+                <input id="usernameInput" class="usernameInput" type="text" maxlength="14" v-model="username" @change="(e)=>{ setUsername(e) }"
+                />
+            </div>
+        </li>
+
+    </ul>
+
+
+
+
+
+    <!-- <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script> -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/vue/vue.js"></script>
+    <script src="/vue/main.js"></script>
+</body>
+
+</html>

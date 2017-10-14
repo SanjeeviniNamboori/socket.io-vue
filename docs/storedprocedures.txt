@@ -1,0 +1,14 @@
+
+DROP procedure IF exists VoltusWave.add_users_data;
+DELIMITER $$
+CREATE PROCEDURE VoltusWave.add_users_data 
+( in_username     VARCHAR(45), in_password     VARCHAR(45), in_displayname  VARCHAR(45), in_imageurl     VARCHAR(45) )
+BEGIN 
+
+    INSERT INTO VoltusWave.users
+         (username, password, displayname, imageurl)
+    VALUES 
+         (in_username,in_password,in_displayname,in_imageurladd_users_data);
+end$$
+
+DELIMITER ;

@@ -56,6 +56,11 @@ app.get('/reg', function (request, response) {
     response.render('register');
 })
 
+app.get('/login' , function(request,response){
+    response.render('login');
+})
+
+
 app.get('/demo', function (request, response) {
     console.log(" In demo route");
 })
@@ -79,6 +84,19 @@ app.post('/api/addUser', function (request, response) {
     })
 
 })
+
+
+app.post('/api/login', function(request,response){
+    var username = request.body.username;
+    var password = request.body.password;
+})
+
+
+
+
+
+
+
 // Chatroom
 
 var numUsers = 0;
