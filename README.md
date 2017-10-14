@@ -1,7 +1,7 @@
 
 # Socket.IO Chat
 
-A simple chat demo for socket.io !!!
+A simple chat demo for socket.io
 
 ## How to use
 
@@ -23,7 +23,19 @@ on website load.
 - Users can type chat messages to the chat room.
 - A notification is sent to all users when a user joins or leaves
 the chatroom.
-- A user can also add rooms and switch between the rooms.
-- All the messages are published to Redis to implement horizontal scaling.
-- View part is developed in VueJS.
 
+
+
+DROP procedure IF exists VoltusWave.add_users_data;
+DELIMITER $$
+CREATE PROCEDURE VoltusWave.add_users_data 
+( userid       INT(11), username     VARCHAR(15), password     VARCHAR(15), displayname  VARCHAR(15), imageurl     VARCHAR(15) )
+BEGIN 
+
+    INSERT INTO VoltusWave.users
+         (username, password, displayname, imageurl)
+    VALUES 
+         (username,password,displayname,url);
+end$$
+
+DELIMITER ;

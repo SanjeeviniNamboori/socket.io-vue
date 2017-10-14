@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="loginstyle.css">
+    <script src="https://unpkg.com/vue"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  
+</head>
+
+<body>
+    <!--  <div class="wrapper">
+        <form class="form-signin">
+            <h2 class="form-signin-heading">Please login</h2>
+            <input type="text" class="form-control" name="username" placeholder="Username" required="" autofocus="" />
+            <input type="password" class="form-control" name="password" placeholder="Password" required="" />
+            <label class="checkbox">
+                <a href="#"> Not yet registered? Register here </a>  -->
+    <!--  <input type="checkbox" value="remember-me" id="rememberMe" name="rememberMe"> Remember me -->
+    <!--     </label>
+
+            <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
+        </form>
+    </div>   -->
+
+
+
+    <div class="wrapper" id="wrapper">
+        <form class="form-signin"  method="POST" action="/api/addUser">
+            <h2 class="form-signin-heading">{{formHeading}}</h2>
+            <input type="text" class="form-control" name="username" placeholder="Username" required="" autofocus="" />
+            <input type="password" class="form-control" name="password" placeholder="Password" required="" />
+            <input type="text" class="form-control" name="displayname" placeholder="Display name" required="" />
+            <input type="text" class="form-control" name="imageurl" placeholder="Image URL" required="" />
+            <!-- <label class="checkbox">
+                    <a href="#"> Not yet registered? Register here </a> -->
+            <!--  <input type="checkbox" value="remember-me" id="rememberMe" name="rememberMe"> Remember me -->
+            <!-- </label>   -->
+
+           <!-- <button class="btn btn-lg btn-primary btn-block" type="submit">Register</button>   -->
+                <input type="submit" value="submit" >  </input>
+
+        </form>
+    </div>
+
+<script>
+    new Vue({
+        el: '#wrapper',
+        data: {
+            formHeading : 'REGISTER',
+          user :{
+              userName :'',
+              password:'',
+              displayName:'',
+              imageURL:''
+          }
+          
+        },
+        methods: {
+          addUser: function (event) {
+              this.user.userName = event.target.username.value;
+              console.log("in add user method" +  this.user.userName);
+           
+          },
+      
+      
+        },
+      
+      
+        mounted() {
+         
+      
+      
+         
+      
+        }
+      })
+      
+
+
+    
+    </script>
+
+
+</body>
+
+</html>

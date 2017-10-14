@@ -1,5 +1,6 @@
 // Setup basic express server
 var express = require('express');
+var mysql = require('mysql');
 var app = express();
 var path = require('path');
 var server = require('http').createServer(app);
@@ -7,16 +8,77 @@ var io = require('socket.io')(server);
 var redis = require("redis");
 var sub = redis.createClient();
 var pub = redis.createClient();
-
-var port = process.env.PORT || 8000;
-
+var bodyParser = require('body-parser')
+var port = process.env.PORT || 3000;
+var ejs = require('ejs');
 server.listen(port, function () {
     console.log('Server listening at port %d', port);
 });
 
-// Routing
-app.use(express.static(path.join(__dirname, 'public')));
+// parse application/json
+app.use(bodyParser.json())
 
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(express.static(path.join(__dirname, '')));
+app.set('view engine', 'html');
+
+// view engine setup
+app.engine('html', ejs.renderFile);
+
+
+// Database connectivity
+
+var connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'Apple#123',
+    database: 'VoltusWave'
+});
+
+
+connection.connect(function (error) {
+    if (error) {
+        console.log("Database connection failed" + error);
+    } else {
+        console.log("Database connection successfull");
+    }
+})
+
+
+
+
+// Routing
+//app.use(express.static(path.join(__dirname, 'public'))); 
+
+app.get('/reg', function (request, response) {
+    //response.sendFile(path.join(__dirname + '/public/login.html'));
+    response.render('register');
+})
+
+app.get('/demo', function (request, response) {
+    console.log(" In demo route");
+})
+
+app.post('/api/addUser', function (request, response) {
+    // console.log(request.body.username);
+    var username = request.body.username;
+    var password = request.body.password;
+    var displayname = request.body.displayname;
+    var imageurl = request.body.imageurl;
+
+    connection.query(`call add_users_data(?,?,?,?)`, [username, password, displayname, imageurl], function (error, result) {
+        if (error) {
+            console.log(error);
+            return;
+        }
+
+        if (result) {
+            console.log("User added successfully" + result);
+        }
+    })
+
+})
 // Chatroom
 
 var numUsers = 0;
@@ -62,14 +124,14 @@ io.on('connection', function (socket) {
 
     socket.on('new message', function (msg) {
         // we tell the client to execute 'new message'
-            console.log("in new message event" +  msg);
+        console.log("in new message event" + msg);
         var reply = JSON.stringify({
             method: 'message',
             sendType: 'sendToAllClientsInRoom',
             data: {
                 username: socket.username,
                 room: socket.room,
-                 message: msg
+                message: msg
             },
             sendTo: 'new message'
         });
@@ -171,15 +233,50 @@ io.on('connection', function (socket) {
     });
 
     // when the user disconnects.. perform this
-  /*  socket.on('disconnect', function () {
+    /*  socket.on('disconnect', function () {
+          if (addedUser) {
+              --numUsers;
+  
+              var index = users.indexOf(socket.username);
+              if (index > -1) {
+                  users.splice(index, 1);
+              }
+  
+              var reply = JSON.stringify({
+                  method: 'message',
+                  sendType: 'sendToAllClientsInRoom',
+                  data: {
+                      username: socket.username,
+                      room: socket.room
+                  },
+                  sendTo: 'user left'
+              });
+             pub.publish(socket.room, reply);
+  
+             sub.quit();
+              pub.publish("chatting", "User is disconnected :" + socket.id);
+  
+              // echo globally that this client has left
+              /* socket.broadcast.to(socket.room).emit('user left', {
+                 username: socket.username,
+                 numUsers: numUsers
+               });  */
+    /*  socket.leave(socket.room);
+      console.log(users);
+
+
+
+
+  }
+});
+*/
+    socket.on('disconnect', function () {
         if (addedUser) {
             --numUsers;
-
-            var index = users.indexOf(socket.username);
-            if (index > -1) {
-                users.splice(index, 1);
-            }
-
+            // socket.broadcast.to(socket.room).emit('user left', {
+            //     username: socket.username,
+            //     numUsers: numUsers
+            //   }); 
             var reply = JSON.stringify({
                 method: 'message',
                 sendType: 'sendToAllClientsInRoom',
@@ -189,108 +286,73 @@ io.on('connection', function (socket) {
                 },
                 sendTo: 'user left'
             });
-           pub.publish(socket.room, reply);
-
-           sub.quit();
-            pub.publish("chatting", "User is disconnected :" + socket.id);
-
-            // echo globally that this client has left
-            /* socket.broadcast.to(socket.room).emit('user left', {
-               username: socket.username,
-               numUsers: numUsers
-             });  */
-          /*  socket.leave(socket.room);
-            console.log(users);
-
-
-
+            pub.publish(socket.room, reply);
 
         }
-    });
-*/
-        socket.on('disconnect' , function(){
-                if(addedUser){
-                    --numUsers;
-                    // socket.broadcast.to(socket.room).emit('user left', {
-                    //     username: socket.username,
-                    //     numUsers: numUsers
-                    //   }); 
-                    var reply = JSON.stringify({
-                        method: 'message',
-                        sendType: 'sendToAllClientsInRoom',
-                        data: {
-                            username: socket.username,
-                            room: socket.room
-                        },
-                        sendTo: 'user left'
-                    });
-                   pub.publish(socket.room, reply);
-        
-                }
-        }),
+    }),
 
 
-    socket.on('switchRoom', function (data) {
-        // leave the current room (stored in session)
-        console.log("room left" + socket.room)
-        socket.leave(socket.room);
-        // join new room, received as function parameter
-        var newroom = data.newroom;
-        socket.join(newroom);
+        socket.on('switchRoom', function (data) {
+            // leave the current room (stored in session)
+            console.log("room left" + socket.room)
+            socket.leave(socket.room);
+            // join new room, received as function parameter
+            var newroom = data.newroom;
+            socket.join(newroom);
 
 
-        //socket.emit('updatechat', 'SERVER', 'you have connected to '+ newroom);
-        // sent message to OLD room
-        //socket.broadcast.to(socket.room).emit('updatechat', 'SERVER', socket.username+' has left this room');
-        socket.emit('clear');
+            //socket.emit('updatechat', 'SERVER', 'you have connected to '+ newroom);
+            // sent message to OLD room
+            //socket.broadcast.to(socket.room).emit('updatechat', 'SERVER', socket.username+' has left this room');
+            socket.emit('clear');
 
-        socket.broadcast.to(socket.room).emit('user left', {
-            username: socket.username,
-            numUsers: numUsers
+            /* socket.broadcast.to(socket.room).emit('user left', {
+                 username: socket.username,
+                 numUsers: numUsers
+             });  */
+            // update socket session room title
+
+
+            var reply = JSON.stringify({
+                method: 'message',
+                sendType: 'sendToAllClientsInRoom',
+                data: {
+                    username: socket.username,
+                    numUsers: numUsers,
+                    room: socket.room
+                },
+                sendTo: 'user left'
+            });
+            pub.publish(socket.room, reply);
+
+
+            socket.room = newroom;
+            sub.subscribe(newroom);
+
+
+            /*
+             socket.broadcast.to(socket.room).emit('user joined', {
+          username: socket.username,
+          numUsers: numUsers,
+          room:socket.room
         });
-        // update socket session room title
+        */
+            //socket.emit('updaterooms', rooms, newroom);
+            reply = JSON.stringify({
+                method: 'message',
+                sendType: 'sendToAllClientsInRoom',
+                data: {
+                    username: socket.username,
+                    room: socket.room
+                },
+                sendTo: 'user joined'
+            });
+            pub.publish(socket.room, reply);
 
 
-        var reply = JSON.stringify({
-            method: 'message',
-            sendType: 'sendToAllClientsInRoom',
-            data: {
-                username: socket.username,
-                numUsers: numUsers,
-                room: socket.room
-            },
-            sendTo: 'user left'
+
+
         });
-        pub.publish(socket.room, reply);
-
-
-        socket.room = newroom;
-        sub.subscribe(newroom);
-
-
-		/*
-		 socket.broadcast.to(socket.room).emit('user joined', {
-      username: socket.username,
-      numUsers: numUsers,
-	  room:socket.room
-    });
-	*/
-        //socket.emit('updaterooms', rooms, newroom);
-        reply = JSON.stringify({
-            method: 'message',
-            sendType: 'sendToAllClientsInRoom',
-            data: {
-                username: socket.username,
-                room: socket.room
-            },
-            sendTo: 'user joined'
-        });
-        pub.publish(socket.room, reply);
-
-
-
-
-    });
 
     sub.on("subscribe", function (channel, count) {
         console.log("Subscribed to " + channel + ". Now subscribed to " + count + " channel(s).");
