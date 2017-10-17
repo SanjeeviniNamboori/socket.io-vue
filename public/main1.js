@@ -5,7 +5,8 @@ var vm = new Vue({
   data: {
     nickName: "What's your nickname?",
     show: true,
-    showPage: false,
+   // showPage: false,
+   showPage:true,
     messagePlaceHolder: "Type your message here",
     roomPlaceHolder: "Enter your room name here",
     welcomeMessage: '',

@@ -4,15 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
-    <link rel="stylesheet" href="loginstyle.css">
+   <!-- <link rel="stylesheet" href="loginstyle.css">   -->
     <script src="https://unpkg.com/vue"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   
 </head>
 
 <body>
-    <div class="wrapper">
-        <form class="form-signin">
+    <div class="wrapper" id="wrapper">
+        <form class="form-signin" method="POST" action="/api/login">
             <h2 class="form-signin-heading">Please login</h2>
             <input type="text" class="form-control" name="username" placeholder="Username" required="" autofocus="" />
             <input type="password" class="form-control" name="password" placeholder="Password" required="" />
@@ -24,10 +24,40 @@
            <!-- <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>    -->
            <input type="submit" value="submit"/>
         </form>
+        <%  
+        var error;
+        if(error)  { %>
+        <!--<p style="color:red;" v-on:click="triggerMe()">  click me      </style>   -->
+            <p style="color:red;" >  <%= error;   %>  </p>
+                <% }   %>
+
     </div>   
 
+<script>
+  //  var Vue = require('vue');
+//Vue.use(require('vue-resource'));
+
+new Vue({
+
+    el: '#wrapper',
 
 
+    data :{
+ //  errorMessage :''
+ url : 'http://localhost:3000/demo'
+},
+
+methods:{
+    triggerMe :  function(){
+     new Vue.$http.get(url);
+    }
+}
+
+});
+
+
+</script>
+<script src="/socket.io/socket.io.js"></script>
 
 </body>
 

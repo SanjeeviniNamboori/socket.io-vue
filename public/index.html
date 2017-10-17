@@ -15,7 +15,8 @@
   <ul id="pages" class="pages">
 
     {{welcomeMessage}}
-    <li class="chat page" v-if="showPage">
+   <!-- <li class="chat page" v-if="showPage">  -->
+      <li class="chat page" v-if="showPage"> 
       <div class="col-md-8" style="height:100%">
         <div class="chatArea">
           <!--<ul class="messages" v-for="messageElements in messageElements">
@@ -64,14 +65,14 @@
 
 
 
-    <li id="loginpage" class="login page" v-if="show">
+  <!--  <li id="loginpage" class="login page" v-if="show">
       <div id="form" class="form">
-        <h3 class="title">{{nickName}}</h3>
-        <!--<input id="usernameInput" class="usernameInput" type="text" maxlength="14" v-model="username" @change="(e)=>{ nicknameChanged(e) }" /> -->
-        <input id="usernameInput" class="usernameInput" type="text" maxlength="14" v-on:keydown="getNickName" />
+        <h3 class="title">{{nickName}}</h3> 
+        
+     <input id="usernameInput" class="usernameInput" type="text" maxlength="14" v-on:keydown="getNickName" />
       </div>
     </li>
-
+ -->
   </ul>
 
 

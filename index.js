@@ -2,6 +2,7 @@
 var express = require('express');
 var mysql = require('mysql');
 var app = express();
+app.io = io;
 var path = require('path');
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
@@ -11,13 +12,17 @@ var pub = redis.createClient();
 var bodyParser = require('body-parser')
 var port = process.env.PORT || 3000;
 var ejs = require('ejs');
+const timber = require('timber');
+var cookieParser = require('cookie-parser');
+
+
 server.listen(port, function () {
     console.log('Server listening at port %d', port);
 });
 
 // parse application/json
 app.use(bodyParser.json())
-
+app.use(cookieParser())
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static(path.join(__dirname, '')));
@@ -25,11 +30,12 @@ app.set('view engine', 'html');
 
 // view engine setup
 app.engine('html', ejs.renderFile);
+//app.use(timber.middlewares.express())
 
 
 // Database connectivity
 
-var connection = mysql.createConnection({
+var mysql_connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: 'Apple#123',
@@ -37,7 +43,7 @@ var connection = mysql.createConnection({
 });
 
 
-connection.connect(function (error) {
+mysql_connection.connect(function (error) {
     if (error) {
         console.log("Database connection failed" + error);
     } else {
@@ -46,19 +52,22 @@ connection.connect(function (error) {
 })
 
 
+app.get('/login', function (request, response) {
+    // app.call('/demo');
+    response.render('login');
+})
+
 
 
 // Routing
-//app.use(express.static(path.join(__dirname, 'public'))); 
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/reg', function (request, response) {
     //response.sendFile(path.join(__dirname + '/public/login.html'));
     response.render('register');
 })
 
-app.get('/login' , function(request,response){
-    response.render('login');
-})
+
 
 
 app.get('/demo', function (request, response) {
@@ -72,7 +81,7 @@ app.post('/api/addUser', function (request, response) {
     var displayname = request.body.displayname;
     var imageurl = request.body.imageurl;
 
-    connection.query(`call add_users_data(?,?,?,?)`, [username, password, displayname, imageurl], function (error, result) {
+    mysql_connection.query(`call add_users_data(?,?,?,?)`, [username, password, displayname, imageurl], function (error, result) {
         if (error) {
             console.log(error);
             return;
@@ -86,12 +95,25 @@ app.post('/api/addUser', function (request, response) {
 })
 
 
-app.post('/api/login', function(request,response){
-    var username = request.body.username;
-    var password = request.body.password;
+app.post('/api/login', function (request, response) {
+    var p_username = request.body.username;
+    var p_password = request.body.password;
+    console.log("in login function" + p_username + p_password);
+    mysql_connection.query('select * from users where username =? and password = ? ', [p_username, p_password], function (error, result) {
+        //  mysql_connection.query(`call login(?,?)`, [p_username, p_password], function (error, result) {
+        if (error) {
+            console.log(error);
+            return
+        }
+        if (result == 0) {
+            return response.render('login', { "error": "Wrong username / password" });
+        } else {
+            response.cookie('userid', result[0].userid);
+            response.cookie('username', result[0].username);
+            response.redirect('/');
+        }
+    })
 })
-
-
 
 
 
@@ -102,6 +124,10 @@ app.post('/api/login', function(request,response){
 var numUsers = 0;
 var users = [];
 var rooms = ["default"];
+
+
+
+
 function checkRoom(room) {
     var index = rooms.indexOf(room);
     console.log(index);
@@ -130,6 +156,8 @@ sub.on("message", function (channel, data) {
 
 
 io.on('connection', function (socket) {
+    console.log("in io connection" + socket.handshake.headers['cookie']);
+
     var addedUser = false;
 
     io.emit('room added', {
@@ -142,7 +170,21 @@ io.on('connection', function (socket) {
 
     socket.on('new message', function (msg) {
         // we tell the client to execute 'new message'
+        var dateandtime = new Date();
         console.log("in new message event" + msg);
+        console.log("in new message event" + socket.room);
+
+        mysql_connection.query(`call addmessage(?,?,?,?)`, [msg, 1, socket.room, dateandtime], function (error, result) {
+            if (error) {
+                console.log(error);
+                return
+            }
+
+            if (result) {
+                console.log(result)
+            }
+        })
+
         var reply = JSON.stringify({
             method: 'message',
             sendType: 'sendToAllClientsInRoom',
@@ -162,11 +204,22 @@ io.on('connection', function (socket) {
         });*/
     });
 
-    socket.on('add room', function (room) {
+    //  socket.on('add room', function (room) {
+
+    io.on('add room', function (room) {
         if (checkRoom(room)) return;
         rooms.push(room);
         //console.log("room added would be broadcasted"+rooms[0]);
+        mysql_connection.query(`call add_rooms(?)`, [room], function (error, result) {
+            if (error) {
+                console.log(error);
+                return
+            }
 
+            if (result) {
+                console.log(result)
+            }
+        })
         var reply = JSON.stringify({
             method: 'message',
             sendType: 'sendToAllConnectedClients',
@@ -183,16 +236,12 @@ io.on('connection', function (socket) {
 
 
 
-        /* io.emit('room added', {
-          username: socket.username,
-          rooms:rooms
-          });*/
-        /*socket.emit('login', {
-        numUsers: numUsers
-      });
-       */
+
 
     });
+
+
+
 
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (username) {
@@ -250,44 +299,7 @@ io.on('connection', function (socket) {
         });
     });
 
-    // when the user disconnects.. perform this
-    /*  socket.on('disconnect', function () {
-          if (addedUser) {
-              --numUsers;
-  
-              var index = users.indexOf(socket.username);
-              if (index > -1) {
-                  users.splice(index, 1);
-              }
-  
-              var reply = JSON.stringify({
-                  method: 'message',
-                  sendType: 'sendToAllClientsInRoom',
-                  data: {
-                      username: socket.username,
-                      room: socket.room
-                  },
-                  sendTo: 'user left'
-              });
-             pub.publish(socket.room, reply);
-  
-             sub.quit();
-              pub.publish("chatting", "User is disconnected :" + socket.id);
-  
-              // echo globally that this client has left
-              /* socket.broadcast.to(socket.room).emit('user left', {
-                 username: socket.username,
-                 numUsers: numUsers
-               });  */
-    /*  socket.leave(socket.room);
-      console.log(users);
 
-
-
-
-  }
-});
-*/
     socket.on('disconnect', function () {
         if (addedUser) {
             --numUsers;
@@ -384,3 +396,7 @@ io.on('connection', function (socket) {
 
 
 });
+
+
+
+
