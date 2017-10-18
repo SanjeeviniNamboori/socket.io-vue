@@ -358,6 +358,13 @@ io.on('connection', function (socket) {
 
 
         socket.on('switchRoom', function (data) {
+
+
+                    // Db call to get previous messages
+
+
+
+
             // leave the current room (stored in session)
             console.log("room left" + socket.room)
             socket.leave(socket.room);
