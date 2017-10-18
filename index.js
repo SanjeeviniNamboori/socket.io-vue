@@ -13,6 +13,7 @@ var bodyParser = require('body-parser')
 var port = process.env.PORT || 3000;
 var ejs = require('ejs');
 const timber = require('timber');
+var cookie =  require('cookie');
 var cookieParser = require('cookie-parser');
 
 
@@ -89,6 +90,7 @@ app.post('/api/addUser', function (request, response) {
 
         if (result) {
             console.log("User added successfully" + result);
+            response.render('login');
         }
     })
 
@@ -156,9 +158,46 @@ sub.on("message", function (channel, data) {
 
 
 io.on('connection', function (socket) {
-    console.log("in io connection" + socket.handshake.headers['cookie']);
+     var addedUser = false;
+   // var cookieObj = socket.handshake.headers['cookie'];
+    var cookieObj =  socket.handshake.headers.cookie;
+    console.log("in io connection" +cookieObj);
+    var cookies = cookie.parse(socket.handshake.headers.cookie);
+    addUser(socket);
 
-    var addedUser = false;
+    function addUser(socket) {
+        
+        socket.userid = cookies.userid;
+        socket.username = cookies.username;
+        socket.room = "default";
+      //  socket.roomid = 1;
+        console.log(" Inside add user function "  + socket.userid);
+        ++numUsers;
+        socket.join(socket.room);
+        users.push(socket.username);
+        addedUser = true;
+        sub.subscribe("default");
+        socket.emit('login', {
+            numUsers: numUsers,
+            room: socket.room
+        });
+        var reply = JSON.stringify({
+            method: 'message',
+            sendType: 'sendToAllClientsInRoom',
+            data: {
+                username: socket.username,
+                room: socket.room
+            },
+            sendTo: 'user joined'
+        });
+        pub.publish(socket.room, reply);
+
+    }
+
+
+
+
+   
 
     io.emit('room added', {
 
@@ -174,7 +213,7 @@ io.on('connection', function (socket) {
         console.log("in new message event" + msg);
         console.log("in new message event" + socket.room);
 
-        mysql_connection.query(`call addmessage(?,?,?,?)`, [msg, 1, socket.room, dateandtime], function (error, result) {
+        mysql_connection.query(`call addmessage(?,?,?,?)`, [msg, socket.userid,"1", dateandtime], function (error, result) {
             if (error) {
                 console.log(error);
                 return
@@ -204,10 +243,13 @@ io.on('connection', function (socket) {
         });*/
     });
 
-    //  socket.on('add room', function (room) {
+    socket.on('add room', function (room) {
 
-    io.on('add room', function (room) {
-        if (checkRoom(room)) return;
+
+   // io.on('add room', function (room) {
+       // if (checkRoom(room)) return;
+
+        console.log("in server side  " + room);
         rooms.push(room);
         //console.log("room added would be broadcasted"+rooms[0]);
         mysql_connection.query(`call add_rooms(?)`, [room], function (error, result) {
@@ -217,7 +259,7 @@ io.on('connection', function (socket) {
             }
 
             if (result) {
-                console.log(result)
+                console.log("in rooms" + JSON.stringify(result));
             }
         })
         var reply = JSON.stringify({
@@ -231,59 +273,52 @@ io.on('connection', function (socket) {
         });
         pub.publish(socket.room, reply);
 
-
-
-
-
-
-
-
     });
 
 
 
 
     // when the client emits 'add user', this listens and executes
-    socket.on('add user', function (username) {
-        //console.log("in socket fun");
-        //if (addedUser) return;
-
-        // we store the username in the socket session for this client
-        socket.username = username;
-        // console.log("server side" +  socket.username);
-        ++numUsers;
-        socket.room = "default";
-        socket.join(socket.room);
-        users.push(username);
-        addedUser = true;
-        //var room = io.adapter.rooms[socket.room];
-        sub.subscribe("default");
-        socket.emit('login', {
-            numUsers: numUsers,
-            room: socket.room
-        });
-        console.log(users);
-        // echo globally (all clients) that a person has connected
-
-
-        var reply = JSON.stringify({
-            method: 'message',
-            sendType: 'sendToAllClientsInRoom',
-            data: {
-                username: socket.username,
-                room: socket.room
-            },
-            sendTo: 'user joined'
-        });
-        pub.publish(socket.room, reply);
-
-
-        /*  socket.broadcast.to(socket.room).emit('user joined', {
-            username: socket.username,
-            numUsers: numUsers,
-            room:socket.room
-          });*/
-    });
+    /*  socket.on('add user', function (username) {
+          //console.log("in socket fun");
+          //if (addedUser) return;
+  
+          // we store the username in the socket session for this client
+          socket.username = username;
+          // console.log("server side" +  socket.username);
+          ++numUsers;
+          socket.room = "default";
+          socket.join(socket.room);
+          users.push(username);
+          addedUser = true;
+          //var room = io.adapter.rooms[socket.room];
+          sub.subscribe("default");
+          socket.emit('login', {
+              numUsers: numUsers,
+              room: socket.room
+          });
+          console.log(users);
+          // echo globally (all clients) that a person has connected
+  
+  
+          var reply = JSON.stringify({
+              method: 'message',
+              sendType: 'sendToAllClientsInRoom',
+              data: {
+                  username: socket.username,
+                  room: socket.room
+              },
+              sendTo: 'user joined'
+          });
+          pub.publish(socket.room, reply);
+  
+  
+          /*  socket.broadcast.to(socket.room).emit('user joined', {
+              username: socket.username,
+              numUsers: numUsers,
+              room:socket.room
+            });*/
+    /*   });  */
 
     // when the client emits 'typing', we broadcast it to others
     socket.on('typing', function () {

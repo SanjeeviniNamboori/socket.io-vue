@@ -5,8 +5,8 @@ var vm = new Vue({
   data: {
     nickName: "What's your nickname?",
     show: true,
-   // showPage: false,
-   showPage:true,
+    // showPage: false,
+    showPage: true,
     messagePlaceHolder: "Type your message here",
     roomPlaceHolder: "Enter your room name here",
     welcomeMessage: '',
@@ -23,17 +23,30 @@ var vm = new Vue({
       '#58dc00', '#287b00', '#a8f07a', '#4ae8c4',
       '#3b88eb', '#3824aa', '#a700ff', '#d300e7'
     ],
-    colorCode: ''
+    colorCode: '',
+    useridvalues: null,
+    usernamevalues: null
 
 
   },
   methods: {
+
+    getRoom: function(event){
+      if (event.which === 13) {
+        console.log("in this room"+ event.target.value);
+
+        this.addRoom();
+      }
+    },
+
+
     getNickName: function (event) {
       if (event.which === 13) {
-        if (this.room) {
+        /*if (this.room == null) {
+          
           //this.room = false;
           this.addRoom();
-        }
+        }  */
 
         if (this.username) {
           console.log("in if loop");
@@ -77,15 +90,16 @@ var vm = new Vue({
 
 
 
-    setUsername: function () {
-
-      this.show = !this.show;
-      this.showPage = true;
-
-      this.socket.emit('add user', this.username);
-    },
+    /* setUsername: function () {
+ 
+       this.show = !this.show;
+       this.showPage = true;
+ 
+       this.socket.emit('add user', this.username);
+     },  */
 
     log(message) {
+
       console.log("in log function" + message);
 
       this.welcomeMessage = message;
@@ -110,11 +124,11 @@ var vm = new Vue({
       console.log(this.room);
 
 
-      if (this.room && this.connected) {
+     // if (this.room && this.connected) {
 
         this.socket.emit('add room', this.room);
         this.room = '';
-      }
+     // }
     },
 
     userlog(data) {
@@ -144,6 +158,36 @@ var vm = new Vue({
   mounted() {
     this.socket = io();
     let scope = this;
+
+    console.log(document.cookie);
+    var cookie = document.cookie;
+    var cookieSplitObj = cookie.split(';');
+    for (var t = 0; t < cookieSplitObj.length; t++) {
+      console.log(cookieSplitObj[t]);
+      scope.useridvalues = cookieSplitObj[0];
+      console.log(scope.useridvalues + "useridvalues");
+      scope.usernamevalues = cookieSplitObj[1];
+      console.log(scope.usernamevalues + "usernamevalues");
+      /*var k = cookieSplitObj[t].split('=');
+       for(var g=0;g< k.length; g++){
+         console.log(k[g]);
+         if(k[g] == 'username'){
+           console.log("username value"  );
+          // scope.username =  k[g]+1;
+         }
+       }   */
+
+    }
+
+    //scope.log("welcome");
+
+    var y = scope.usernamevalues.split('=');
+    for (var j = 0; j < y.length; j++) {
+      console.log("in j loop " + y[1]);
+      scope.username = y[1];
+    }
+
+
     this.socket.on('login', function (data) {
       console.log("in login event");
       scope.connected = true;
