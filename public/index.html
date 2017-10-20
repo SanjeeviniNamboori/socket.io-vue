@@ -53,7 +53,8 @@
         <div id="roompage" class="room page chatArea">
           <div class="roomArea">
             <ul class="rooms">
-              <li class="roomName" v-for="room in roomsArray" v-on:click="rName(room)">{{room}} </li>
+             <!-- <li class="roomName" v-for="room in roomsArray" v-on:click="rName(room)">{{room}} </li>   -->
+             <li class="roomName" v-for="room in roomsArray" v-on:click="()=>{ rName(room) }" >{{room.rname}}  </li>
 
 
             </ul>

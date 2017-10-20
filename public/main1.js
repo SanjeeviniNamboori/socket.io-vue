@@ -31,9 +31,22 @@ var vm = new Vue({
   },
   methods: {
 
-    getRoom: function(event){
+
+    getRoomsList: function () {
+      let scope = this;
+      this.socket.emit('getallrooms', {}, (err, data) => {
+        for (var p = 0; p < data.length; p++) {
+          console.log(data[p].roomid);
+          console.log(data[p].roomname);
+          scope.roomsArray.push({ "rid": data[p].roomid, "rname": data[p].roomname });
+        }
+      });
+    },
+
+
+    getRoom: function (event) {
       if (event.which === 13) {
-        console.log("in this room"+ event.target.value);
+        console.log("in this room" + event.target.value);
 
         this.addRoom();
       }
@@ -83,7 +96,7 @@ var vm = new Vue({
 
 
     rName: function (data) {
-      console.log("inside rname function" + data);
+      console.log("inside rname function" + JSON.stringify(data));
       this.socket.emit('switchRoom', { newroom: data });
       this.messagesArray = [];
     },
@@ -124,11 +137,11 @@ var vm = new Vue({
       console.log(this.room);
 
 
-     // if (this.room && this.connected) {
+      // if (this.room && this.connected) {
 
-        this.socket.emit('add room', this.room);
-        this.room = '';
-     // }
+      this.socket.emit('add room', this.room);
+      this.room = '';
+      // }
     },
 
     userlog(data) {
@@ -149,6 +162,7 @@ var vm = new Vue({
       console.log("colors " + this.COLORS[index]);
       return this.COLORS[index];
     }
+
 
 
 
@@ -187,6 +201,9 @@ var vm = new Vue({
       scope.username = y[1];
     }
 
+    scope.getRoomsList();
+
+
 
     this.socket.on('login', function (data) {
       console.log("in login event");
@@ -206,7 +223,11 @@ var vm = new Vue({
 
     this.socket.on('room added', function (data) {
       console.log("rooms" + JSON.stringify(data));
-      scope.roomsArray.splice(0, scope.roomsArray.length, ...data.rooms);
+      // scope.roomsArray.splice(0, scope.roomsArray.length, ...data.rooms);
+      scope.roomsArray = [];
+      scope.getRoomsList();
+      //this.socket.emit('getallrooms');
+      //  scope.roomsArray.splice(0, scope.roomsArray.length, ...data.rooms);
     });
 
 
@@ -230,6 +251,21 @@ var vm = new Vue({
       var dataMessage = "You have been disconnected";
       scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
     });
+
+    this.socket.on('fetchallrooms', function (data) {
+      console.log(JSON.stringify(data));
+      for (var p = 0; p < data.length; p++) {
+        console.log(data[p].roomid);
+        console.log(data[p].roomname);
+        scope.roomsArray.push({ "rid": data[p].roomid, "rname": data[p].roomname });
+      }
+
+    });
+
+
+    /*  this.socket.on('getRooms' , function(){
+  
+      })  */
 
     /* this.socket.on('reconnect', function () {
        var dataMessage = "You have been disconnected";

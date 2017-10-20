@@ -10,10 +10,10 @@ var redis = require("redis");
 var sub = redis.createClient();
 var pub = redis.createClient();
 var bodyParser = require('body-parser')
-var port = process.env.PORT || 3000;
+var port = process.env.PORT || 3002;
 var ejs = require('ejs');
 const timber = require('timber');
-var cookie =  require('cookie');
+var cookie = require('cookie');
 var cookieParser = require('cookie-parser');
 
 
@@ -90,6 +90,7 @@ app.post('/api/addUser', function (request, response) {
 
         if (result) {
             console.log("User added successfully" + result);
+
             response.render('login');
         }
     })
@@ -110,6 +111,7 @@ app.post('/api/login', function (request, response) {
         if (result == 0) {
             return response.render('login', { "error": "Wrong username / password" });
         } else {
+            //  getRooms();
             response.cookie('userid', result[0].userid);
             response.cookie('username', result[0].username);
             response.redirect('/');
@@ -125,9 +127,31 @@ app.post('/api/login', function (request, response) {
 
 var numUsers = 0;
 var users = [];
-var rooms = ["default"];
+//var rooms = ["default"];
+var rooms = [];
 
+// function getRooms() {
+//     var roomsList=[];
+//     console.log(" In get rooms");
+//     mysql_connection.query(`call roomsList`, function (error, result) {
+//         if (error) {
+//             return;
+//         }
 
+//         if (result) {
+//             console.log(result[0]);
+//             var dataPacket = result[0];
+//             for(var g=0;g<dataPacket.length;g++){
+//                 var room_id  =  JSON.stringify(dataPacket[g].roomid);
+//                 var room_name = JSON.stringify(dataPacket[g].roomname);
+//                 console.log("values" + JSON.stringify(dataPacket[g].roomid)   +  JSON.stringify(dataPacket[g].roomname));
+//                 roomsList.push({"roomid" : room_id, "roomname" : room_name });
+//                // roomsList.push(JSON.stringify(dataPacket[g]));
+//             }
+//            return roomsList;
+//         }
+//     });
+// }
 
 
 function checkRoom(room) {
@@ -158,20 +182,20 @@ sub.on("message", function (channel, data) {
 
 
 io.on('connection', function (socket) {
-     var addedUser = false;
-   // var cookieObj = socket.handshake.headers['cookie'];
-    var cookieObj =  socket.handshake.headers.cookie;
-    console.log("in io connection" +cookieObj);
+    var addedUser = false;
+    // var cookieObj = socket.handshake.headers['cookie'];
+    var cookieObj = socket.handshake.headers.cookie;
+    console.log("in io connection" + cookieObj);
     var cookies = cookie.parse(socket.handshake.headers.cookie);
     addUser(socket);
 
     function addUser(socket) {
-        
+
         socket.userid = cookies.userid;
         socket.username = cookies.username;
         socket.room = "default";
-      //  socket.roomid = 1;
-        console.log(" Inside add user function "  + socket.userid);
+        socket.roomid = 1;
+        console.log(" Inside add user function " + socket.userid);
         ++numUsers;
         socket.join(socket.room);
         users.push(socket.username);
@@ -197,23 +221,48 @@ io.on('connection', function (socket) {
 
 
 
-   
 
-    io.emit('room added', {
 
-        rooms: rooms
-    });
+    // io.emit('room added', {
+
+    //     rooms: rooms
+    // });
 
     // when the client emits 'new message', this listens and executes
+    socket.on('getallrooms', function (params, ackCallback) {
+        var roomsList = [];
+        console.log(" In get rooms");
+        mysql_connection.query(`call roomsList`, function (error, result) {
+            if (error) {
+                return;
+            }
 
+            if (result) {
+                console.log(result[0]);
+                var dataPacket = result[0];
+                for (var g = 0; g < dataPacket.length; g++) {
+                    var room_id = JSON.stringify(dataPacket[g].roomid);
+                    var room_name = JSON.stringify(dataPacket[g].roomname);
+                    console.log("values" + JSON.stringify(dataPacket[g].roomid) + JSON.stringify(dataPacket[g].roomname));
+                    roomsList.push({ "roomid": room_id, "roomname": room_name });
+
+                }
+
+                ackCallback(null, roomsList);
+            }
+        });
+
+
+
+    });
 
     socket.on('new message', function (msg) {
         // we tell the client to execute 'new message'
         var dateandtime = new Date();
         console.log("in new message event" + msg);
         console.log("in new message event" + socket.room);
-
-        mysql_connection.query(`call addmessage(?,?,?,?)`, [msg, socket.userid,"1", dateandtime], function (error, result) {
+        console.log("in new message event" + socket.roomid);
+        mysql_connection.query(`call addmessage(?,?,?,?)`, [msg, socket.userid, socket.roomid, dateandtime], function (error, result) {
             if (error) {
                 console.log(error);
                 return
@@ -246,8 +295,8 @@ io.on('connection', function (socket) {
     socket.on('add room', function (room) {
 
 
-   // io.on('add room', function (room) {
-       // if (checkRoom(room)) return;
+        // io.on('add room', function (room) {
+        // if (checkRoom(room)) return;
 
         console.log("in server side  " + room);
         rooms.push(room);
@@ -358,18 +407,19 @@ io.on('connection', function (socket) {
 
 
         socket.on('switchRoom', function (data) {
-
-
-                    // Db call to get previous messages
-
-
+            console.log(JSON.stringify(data) + "switch room");
+            console.log(data.newroom.rid + "switch room");
+            console.log(data.newroom.rname + "switch room");
+            //    var newroom1  =  data.newroom.rname.replace(/"/g, "");
+            //    console.log(newroom1 + "newroomvalue");
 
 
             // leave the current room (stored in session)
             console.log("room left" + socket.room)
             socket.leave(socket.room);
             // join new room, received as function parameter
-            var newroom = data.newroom;
+            //var newroom = data.newroom;
+            var newroom = data.newroom.rname.replace(/"/g, "");
             socket.join(newroom);
 
 
@@ -399,6 +449,7 @@ io.on('connection', function (socket) {
 
 
             socket.room = newroom;
+            socket.roomid = data.newroom.rid;
             sub.subscribe(newroom);
 
 
