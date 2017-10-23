@@ -12,3 +12,21 @@ BEGIN
 end$$
 
 DELIMITER ;
+
+
+
+
+
+DROP procedure IF exists VoltusWave.roomMessages;
+DELIMITER $$
+CREATE PROCEDURE VoltusWave.roomMessages
+( IN p_roomid VARCHAR(45) ) 
+BEGIN
+SELECT * from VoltusWave.chatmessages INNER JOIN VoltusWave.users ON chatmessages.userid = users.userid                                   
+    
+   
+    WHERE  roomid = p_roomid ; 
+    
+end$$
+
+DELIMITER ;

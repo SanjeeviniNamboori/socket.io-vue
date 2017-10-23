@@ -16,6 +16,7 @@ var vm = new Vue({
     userMessage: null,
     // userMessage: '',
     messagesArray: [],
+  
     room: null,
     roomsArray: [],
     COLORS: [
@@ -96,9 +97,24 @@ var vm = new Vue({
 
 
     rName: function (data) {
+    
       console.log("inside rname function" + JSON.stringify(data));
-      this.socket.emit('switchRoom', { newroom: data });
-      this.messagesArray = [];
+
+      let scope = this;
+
+      this.socket.emit('switchRoom', { newroom: data }, function (output) {
+        scope.messagesArray.splice(0, scope.messagesArray.length);
+
+        if (Array.isArray(output) && output[0] && Array.isArray(output[0])) {
+          output[0].forEach(function (msgItem) {
+            msgItem.color =  scope.getUsernameColor(msgItem.username);
+            console.log(msgItem.color);
+            msgItem.type = "userMessage";
+            scope.messagesArray.push(msgItem);
+          });
+        }
+
+      });
     },
 
 
@@ -193,7 +209,7 @@ var vm = new Vue({
 
     }
 
-    //scope.log("welcome");
+
 
     var y = scope.usernamevalues.split('=');
     for (var j = 0; j < y.length; j++) {
@@ -215,7 +231,6 @@ var vm = new Vue({
 
 
     this.socket.on('new message', function (data) {
-      //  scope.addChatMessage(data);
       console.log(" in new message - client ");
       this.colorCode = scope.getUsernameColor(data.username);
       scope.messagesArray.push({ type: "userMessage", "username": data.username, "usermessage": data.message, "color": this.colorCode });
@@ -233,8 +248,6 @@ var vm = new Vue({
 
     this.socket.on('user left', function (data) {
       console.log("user left" + JSON.stringify(data));
-      // scope.userLog = data.username + "left";
-      // scope.userLog.push({"message":data.username + "left"});
       var dataMessage = data.username + "left";
       scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
     });
@@ -242,8 +255,6 @@ var vm = new Vue({
     this.socket.on('user joined', function (data) {
       console.log("user joined" + JSON.stringify(data));
       var dataMessage = data.username + "joined";
-      //scope.userLog.push({"message":data.username + "joined"});
-      // scope.userJoinedLog = data.username + "joined";
       scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
     });
 
@@ -263,17 +274,6 @@ var vm = new Vue({
     });
 
 
-    /*  this.socket.on('getRooms' , function(){
-  
-      })  */
-
-    /* this.socket.on('reconnect', function () {
-       var dataMessage = "You have been disconnected";
- 
-       if (scope.username) {
-         this.socket.emit('add user', scope.username);
-       }
-     }); */
 
   }
 })

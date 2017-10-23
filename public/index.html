@@ -15,8 +15,8 @@
   <ul id="pages" class="pages">
 
     {{welcomeMessage}}
-   <!-- <li class="chat page" v-if="showPage">  -->
-      <li class="chat page" v-if="showPage"> 
+    <!-- <li class="chat page" v-if="showPage">  -->
+    <li class="chat page" v-if="showPage">
       <div class="col-md-8" style="height:100%">
         <div class="chatArea">
           <!--<ul class="messages" v-for="messageElements in messageElements">
@@ -30,10 +30,11 @@
           </li>   -->
           </ul>
           <ul class="messages">
+
             <li class="message" v-for="todo in messagesArray">
 
               <span v-if="todo.type === 'userMessage'">
-               <!-- <span class="username" v-bind:style="{ color: getUsernameColor(todo.username) }">{{todo.username}} </span>  -->
+                <!-- <span class="username" v-bind:style="{ color: getUsernameColor(todo.username) }">{{todo.username}} </span>  -->
                 <span class="username" v-bind:style="{ color: todo.color}">{{todo.username}} </span>
                 <span class="messageBody">{{todo.usermessage}} </span>
               </span>
@@ -53,21 +54,21 @@
         <div id="roompage" class="room page chatArea">
           <div class="roomArea">
             <ul class="rooms">
-             <!-- <li class="roomName" v-for="room in roomsArray" v-on:click="rName(room)">{{room}} </li>   -->
-             <li class="roomName" v-for="room in roomsArray" v-on:click="()=>{ rName(room) }" >{{room.rname}}  </li>
+              <!-- <li class="roomName" v-for="room in roomsArray" v-on:click="rName(room)">{{room}} </li>   -->
+              <li class="roomName" v-for="room in roomsArray" v-on:click="()=>{ rName(room) }">{{room.rname}} </li>
 
 
             </ul>
           </div>
-        <!--  <input class="inputRoom" :placeholder="roomPlaceHolder" @keydown="getNickName" v-model="room"> </input>   -->
-        <input class="inputRoom" :placeholder="roomPlaceHolder" @keydown="getRoom" v-model="room"> </input> 
+          <!--  <input class="inputRoom" :placeholder="roomPlaceHolder" @keydown="getNickName" v-model="room"> </input>   -->
+          <input class="inputRoom" :placeholder="roomPlaceHolder" @keydown="getRoom" v-model="room"> </input>
         </div>
       </div>
     </li>
 
 
 
-  <!--  <li id="loginpage" class="login page" v-if="show">
+    <!--  <li id="loginpage" class="login page" v-if="show">
       <div id="form" class="form">
         <h3 class="title">{{nickName}}</h3> 
         

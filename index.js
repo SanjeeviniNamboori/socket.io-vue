@@ -10,11 +10,12 @@ var redis = require("redis");
 var sub = redis.createClient();
 var pub = redis.createClient();
 var bodyParser = require('body-parser')
-var port = process.env.PORT || 3002;
+var port = process.env.PORT || 3001;
 var ejs = require('ejs');
 const timber = require('timber');
 var cookie = require('cookie');
 var cookieParser = require('cookie-parser');
+//var previousMessages;
 
 
 server.listen(port, function () {
@@ -129,6 +130,7 @@ var numUsers = 0;
 var users = [];
 //var rooms = ["default"];
 var rooms = [];
+
 
 // function getRooms() {
 //     var roomsList=[];
@@ -406,35 +408,27 @@ io.on('connection', function (socket) {
     }),
 
 
-        socket.on('switchRoom', function (data) {
+        socket.on('switchRoom', function (data, callback) {
+            let previousMessages = null;
             console.log(JSON.stringify(data) + "switch room");
             console.log(data.newroom.rid + "switch room");
             console.log(data.newroom.rname + "switch room");
-            //    var newroom1  =  data.newroom.rname.replace(/"/g, "");
-            //    console.log(newroom1 + "newroomvalue");
-
-
-            // leave the current room (stored in session)
             console.log("room left" + socket.room)
             socket.leave(socket.room);
-            // join new room, received as function parameter
-            //var newroom = data.newroom;
             var newroom = data.newroom.rname.replace(/"/g, "");
             socket.join(newroom);
-
-
             //socket.emit('updatechat', 'SERVER', 'you have connected to '+ newroom);
             // sent message to OLD room
             //socket.broadcast.to(socket.room).emit('updatechat', 'SERVER', socket.username+' has left this room');
             socket.emit('clear');
-
             /* socket.broadcast.to(socket.room).emit('user left', {
                  username: socket.username,
                  numUsers: numUsers
              });  */
-            // update socket session room title
 
-
+            //db call to get previous messages 
+            //  mysql_connection.query('select chatmessages.usermessage, users.username from chatmessages INNER JOIN users ON chatmessages.userid = users.userid WHERE chatmessages.roomid = ?  ', [data.newroom.rid], function (err, result) {
+            
             var reply = JSON.stringify({
                 method: 'message',
                 sendType: 'sendToAllClientsInRoom',
@@ -471,6 +465,22 @@ io.on('connection', function (socket) {
                 sendTo: 'user joined'
             });
             pub.publish(socket.room, reply);
+
+            mysql_connection.query(`call roomMessages(?)`, [data.newroom.rid], function (err, result) {
+                if (err) {
+                    console.log(err);
+                    return;
+                };
+
+                if (result) {
+                    console.log("In switch room messages" + JSON.stringify(result));
+                    previousMessages = result;
+                    callback(previousMessages);
+                }
+            });
+
+
+
 
 
 
