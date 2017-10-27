@@ -50,20 +50,41 @@
 
         <input class="inputMessage" :placeholder="messagePlaceHolder" v-model="userMessage" v-on:keydown="getNickName"> </input>
       </div>
-      <div class="col-md-4" style="height:100%">
+      <div class="col-md-2" style="height:100%">
         <div id="roompage" class="room page chatArea">
-          <div class="roomArea">
+          <div class="roomArea" class="col-md-2">
             <ul class="rooms">
               <!-- <li class="roomName" v-for="room in roomsArray" v-on:click="rName(room)">{{room}} </li>   -->
               <li class="roomName" v-for="room in roomsArray" v-on:click="()=>{ rName(room) }">{{room.rname}} </li>
 
 
             </ul>
+
+
+            <!--  <ul class="usersListdb">
+              <li class="users" v-for="user in userListDb" v-bind:id="{user.userid}" > {{user.username}}</li>
+
+            </ul>   -->
+
           </div>
+
+
+
           <!--  <input class="inputRoom" :placeholder="roomPlaceHolder" @keydown="getNickName" v-model="room"> </input>   -->
           <input class="inputRoom" :placeholder="roomPlaceHolder" @keydown="getRoom" v-model="room"> </input>
         </div>
       </div>
+
+
+      <div class="col-md-2" style="height:100%">
+
+        <ul>
+          <li v-for="user in userListDb" :id="user.userid" v-on:click="userChat(user)"> {{user.username}}</li>
+
+        </ul>
+      </div>
+
+
     </li>
 
 

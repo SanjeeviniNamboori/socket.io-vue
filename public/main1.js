@@ -11,12 +11,13 @@ var vm = new Vue({
     roomPlaceHolder: "Enter your room name here",
     welcomeMessage: '',
     username: null,
+    userid: null,
     socket: null,
     connected: false,
     userMessage: null,
     // userMessage: '',
     messagesArray: [],
-  
+    userListDb: [],
     room: null,
     roomsArray: [],
     COLORS: [
@@ -26,12 +27,19 @@ var vm = new Vue({
     ],
     colorCode: '',
     useridvalues: null,
-    usernamevalues: null
+    usernamevalues: null,
+    type: 0,
+    user2user: {
+      senderid: null,
+      sendername: null,
+      receiverid: null,
+      receivername: null
+
+    }
 
 
   },
   methods: {
-
 
     getRoomsList: function () {
       let scope = this;
@@ -42,6 +50,20 @@ var vm = new Vue({
           scope.roomsArray.push({ "rid": data[p].roomid, "rname": data[p].roomname });
         }
       });
+    },
+    getUsersList: function () {
+      let scope = this;
+      console.log("In get logged in users list");
+      this.socket.emit('getusers', {}, function (output) {
+        var y = JSON.parse(output);
+        var x = y[0];
+        for (var n = 0; n < x.length; n++) {
+          console.log(x[n].userid + x[n].username);
+          scope.userListDb.push({ "userid": x[n].userid, "username": x[n].username });
+        }
+
+      });
+
     },
 
 
@@ -97,17 +119,18 @@ var vm = new Vue({
 
 
     rName: function (data) {
-    
+
       console.log("inside rname function" + JSON.stringify(data));
 
       let scope = this;
-
+      this.type = 0;
       this.socket.emit('switchRoom', { newroom: data }, function (output) {
+
         scope.messagesArray.splice(0, scope.messagesArray.length);
 
         if (Array.isArray(output) && output[0] && Array.isArray(output[0])) {
           output[0].forEach(function (msgItem) {
-            msgItem.color =  scope.getUsernameColor(msgItem.username);
+            msgItem.color = scope.getUsernameColor(msgItem.username);
             console.log(msgItem.color);
             msgItem.type = "userMessage";
             scope.messagesArray.push(msgItem);
@@ -117,7 +140,41 @@ var vm = new Vue({
       });
     },
 
+    userChat: function (data) {
+      var scope = this;
+      var person = {};
+      person.senderid = this.userid;
+      person.sendername = this.username;
+      person.receiverid = data.userid;
+      person.receivername = data.username;
+      this.type = 1;
+      //  person.room = this.room;
 
+      this.user2user.senderid = person.senderid;
+      this.user2user.sendername = person.sendername;
+      this.user2user.receiverid = person.receiverid;
+      this.user2user.receivername = person.receivername;
+
+      console.log("In user chat" + JSON.stringify(person));
+
+      //this.socket.emit('usertouser', person);
+      this.socket.emit('usertouser', person, function (output) {
+       
+         console.log("In user chat message " +  JSON.stringify(output.data));
+        scope.messagesArray.splice(0, scope.messagesArray.length);
+        if (Array.isArray(output) && output[0] && Array.isArray(output[0])) {
+          output[0].forEach(function (msgItem) {
+            msgItem.color = scope.getUsernameColor(msgItem.username);
+            msgItem.usermessage = msgItem.message;
+            console.log(msgItem.color);
+            console.log("hey " +  msgItem.message);
+            msgItem.type = "userMessage";
+            scope.messagesArray.push(msgItem);
+          });
+        }
+
+      })
+    },
 
     /* setUsername: function () {
  
@@ -138,13 +195,30 @@ var vm = new Vue({
     sendMessage() {
       console.log(" In send message function" + this.userMessage);
 
-      if (this.userMessage && this.connected) {
+      if (this.type == 1) {
+        console.log("In 1");
+        var data = {
+          userMessage: this.userMessage,
+          senderid: this.user2user.senderid,
+          sendername: this.user2user.sendername,
+          receiverid: this.user2user.receiverid,
+          receivername: this.user2user.receivername
+        }
+
+        
+        this.socket.emit('independant message', data);
+        this.userMessage = "";
+
+      } else {
+
+        /* if (this.userMessage && this.connected) {   */
 
 
         this.socket.emit('new message', this.userMessage);
         this.userMessage = "";
-
       }
+
+      /* }   */
     },
 
 
@@ -187,6 +261,7 @@ var vm = new Vue({
 
   mounted() {
     this.socket = io();
+    // console.log("socket id " + this.socket.id);
     let scope = this;
 
     console.log(document.cookie);
@@ -217,7 +292,17 @@ var vm = new Vue({
       scope.username = y[1];
     }
 
+    var m = scope.useridvalues.split('=');
+    for (var u = 0; u < m.length; u++) {
+      console.log(" in u loop" + m[1]);
+      scope.userid = m[1];
+    }
+
+
+
     scope.getRoomsList();
+
+    scope.getUsersList();
 
 
 
@@ -231,10 +316,15 @@ var vm = new Vue({
 
 
     this.socket.on('new message', function (data) {
-      console.log(" in new message - client ");
+      console.log(" in new message - client " + JSON.stringify(data));
       this.colorCode = scope.getUsernameColor(data.username);
       scope.messagesArray.push({ type: "userMessage", "username": data.username, "usermessage": data.message, "color": this.colorCode });
     });
+
+    this.socket.on('message1', function(data){
+      console.log("in message1" + data);
+    })
+
 
     this.socket.on('room added', function (data) {
       console.log("rooms" + JSON.stringify(data));
@@ -254,9 +344,21 @@ var vm = new Vue({
 
     this.socket.on('user joined', function (data) {
       console.log("user joined" + JSON.stringify(data));
-      var dataMessage = data.username + "joined";
-      scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
+    /*  if (data.hasOwnProperty('utou')) {
+        var temp_data = data.utou;
+        console.log(temp_data);
+        scope.user2user.senderid = temp_data.senderid;
+        scope.user2user.sendername = temp_data.sendername;
+        scope.user2user.receiverid = temp_data.receiverid;
+        scope.user2user.receivername = temp_data.receivername;
+        var dataMessage = data.username + "joined";
+        scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
+      } else {  */
+        var dataMessage = data.username + "joined";
+        scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
+     /* }   */
     });
+
 
     this.socket.on('disconnect', function () {
       var dataMessage = "You have been disconnected";
@@ -273,7 +375,9 @@ var vm = new Vue({
 
     });
 
-
+    this.socket.on('display', function (data) {
+      console.log("client side" + JSON.stringify(data));
+    });
 
   }
 })

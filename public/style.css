@@ -177,3 +177,7 @@ ul {
   align-content: center;
   font-family:courier;
 }
+
+.col-md-2{
+  border: 10px solid #000;
+}

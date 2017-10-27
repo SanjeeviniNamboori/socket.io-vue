@@ -4,6 +4,7 @@ var mysql = require('mysql');
 var app = express();
 app.io = io;
 var path = require('path');
+var cors = require("cors");
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var redis = require("redis");
@@ -15,9 +16,8 @@ var ejs = require('ejs');
 const timber = require('timber');
 var cookie = require('cookie');
 var cookieParser = require('cookie-parser');
-//var previousMessages;
-
-
+var dateandtime = new Date();
+var clients = {};
 server.listen(port, function () {
     console.log('Server listening at port %d', port);
 });
@@ -25,6 +25,7 @@ server.listen(port, function () {
 // parse application/json
 app.use(bodyParser.json())
 app.use(cookieParser())
+app.use(cors());
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static(path.join(__dirname, '')));
@@ -86,13 +87,15 @@ app.post('/api/addUser', function (request, response) {
     mysql_connection.query(`call add_users_data(?,?,?,?)`, [username, password, displayname, imageurl], function (error, result) {
         if (error) {
             console.log(error);
-            return;
+          //  return;
+          response.status(400).send({"failure" : error});
         }
 
         if (result) {
             console.log("User added successfully" + result);
 
-            response.render('login');
+            //response.render('login');
+            response.status(200).send({"success" : "user added successfully"});
         }
     })
 
@@ -112,13 +115,39 @@ app.post('/api/login', function (request, response) {
         if (result == 0) {
             return response.render('login', { "error": "Wrong username / password" });
         } else {
-            //  getRooms();
+            //  var UserItem;
+            //UserItem.userId  =  result[0].userid;
+            // UserItem.userName = result[0].username;
+            //   loggedInUsers.push({"lUserId":  result[0].userid , "lUserName" :  result[0].username});
             response.cookie('userid', result[0].userid);
             response.cookie('username', result[0].username);
             response.redirect('/');
         }
     })
 })
+
+app.post('/api/login1', function (request, response) {
+    var p_username = request.body.username;
+    var p_password = request.body.password;
+    console.log("in login function" + p_username + p_password);
+    mysql_connection.query('select * from users where username =? and password = ? ', [p_username, p_password], function (error, result) {
+        //  mysql_connection.query(`call login(?,?)`, [p_username, p_password], function (error, result) {
+        if (error) {
+            console.log(error);
+            response.status(400).send({ "error": error });
+            return;
+        }
+
+        if (result == 0) {
+            response.status(200).send({ "wrong": "Wrong username / password" });
+            // return response.render('login', { "error": "Wrong username / password" });
+        } else {
+            response.cookie('userid', result[0].userid);
+            response.cookie('username', result[0].username);
+            response.status(200).send({ "success": "success" });
+        }
+    })
+});
 
 
 
@@ -132,28 +161,6 @@ var users = [];
 var rooms = [];
 
 
-// function getRooms() {
-//     var roomsList=[];
-//     console.log(" In get rooms");
-//     mysql_connection.query(`call roomsList`, function (error, result) {
-//         if (error) {
-//             return;
-//         }
-
-//         if (result) {
-//             console.log(result[0]);
-//             var dataPacket = result[0];
-//             for(var g=0;g<dataPacket.length;g++){
-//                 var room_id  =  JSON.stringify(dataPacket[g].roomid);
-//                 var room_name = JSON.stringify(dataPacket[g].roomname);
-//                 console.log("values" + JSON.stringify(dataPacket[g].roomid)   +  JSON.stringify(dataPacket[g].roomname));
-//                 roomsList.push({"roomid" : room_id, "roomname" : room_name });
-//                // roomsList.push(JSON.stringify(dataPacket[g]));
-//             }
-//            return roomsList;
-//         }
-//     });
-// }
 
 
 function checkRoom(room) {
@@ -184,6 +191,9 @@ sub.on("message", function (channel, data) {
 
 
 io.on('connection', function (socket) {
+
+
+
     var addedUser = false;
     // var cookieObj = socket.handshake.headers['cookie'];
     var cookieObj = socket.handshake.headers.cookie;
@@ -193,12 +203,40 @@ io.on('connection', function (socket) {
 
     function addUser(socket) {
 
+        clients.demo = 1;
         socket.userid = cookies.userid;
         socket.username = cookies.username;
+        socket.id = socket.id;
         socket.room = "default";
         socket.roomid = 1;
         console.log(" Inside add user function " + socket.userid);
         ++numUsers;
+
+        if (clients.hasOwnProperty(socket.username)) {
+            console.log("in if clients");
+            clients[socket.username].push(socket.id);
+        } else {
+            console.log(" in else clients");
+            clients[socket.username] = [];
+            clients[socket.username].push(socket.id);
+        }
+        /* Object.keys(clients).forEach(function (key, index) {
+ 
+             console.log("key value" + key + clients[key]);
+             if (key == socket.username) {
+                  clients[socket.username].push(socket.id);
+                // key.push(socket.id);
+             } else {
+                 console.log("in else");
+                 clients[socket.username] = [];
+                 clients[socket.username].push(socket.id);
+             }
+         });  */
+        //key = the name of the object key //index = the ordinal position of the key within the object });
+
+        //clients[socket.username] = [];
+        //clients[socket.username].push(socket.id);
+
         socket.join(socket.room);
         users.push(socket.username);
         addedUser = true;
@@ -217,6 +255,22 @@ io.on('connection', function (socket) {
             sendTo: 'user joined'
         });
         pub.publish(socket.room, reply);
+
+
+
+        for (var property in clients) {
+            // console.log("in for" + property[property]);
+            if (property == socket.username) {
+                console.log("property name" + property + "value" + clients[socket.username]);
+                //    for(var y=0;y<property.length; y++){
+                //        console.log("for" +  property[y]);
+                //    }
+            }
+
+        }
+
+
+
 
     }
 
@@ -260,7 +314,7 @@ io.on('connection', function (socket) {
 
     socket.on('new message', function (msg) {
         // we tell the client to execute 'new message'
-        var dateandtime = new Date();
+        //   var dateandtime = new Date();
         console.log("in new message event" + msg);
         console.log("in new message event" + socket.room);
         console.log("in new message event" + socket.roomid);
@@ -293,6 +347,61 @@ io.on('connection', function (socket) {
           message: msg
         });*/
     });
+
+    socket.on('independant message', function (data) {
+        var temp = data.receivername;
+        var temp_S =data.sendername;
+        var temp_U = data.userMessage;
+        console.log("temp value" + temp);
+       
+        //  console.log("in independant messge" + temp);
+        //  console.log("in independant messge" +temp.senderid +  temp.sendername + temp.receiverid + temp.receivername);
+
+        mysql_connection.query(`call usertousermessages(?,?,?,?)`, [data.senderid, data.receiverid, data.userMessage, dateandtime],
+            function (error, result) {
+                if (error) {
+                    console.log("In independant message event" + error);
+                    return;
+                }
+
+                if (result) {
+                    var data ={
+                        username : temp_S,
+                         message :temp_U
+                     };
+                    
+                    console.log("In independant message event" + result);
+
+                    if (clients.hasOwnProperty(temp)) {
+                        console.log("in temp" + clients[temp]);
+                        var temp_array_socketids = clients[temp];
+                        for(var i=0; i<temp_array_socketids.length; i++){
+                            console.log("temp_array_socketids" +  temp_array_socketids[i]);
+                          //  socket.to(temp_array_socketids[i]).emit("new message", data);
+                        //  socket.broadcast.to(temp_array_socketids[i]).emit('message1', 'for your eyes only');
+                       // socket.emit('new message', data);
+                       io.sockets.in(temp_array_socketids[i]).emit("new message", data);
+                        }
+                        
+                    } else {
+                        console.log("in else");
+                    }
+                }
+
+            });
+
+        // var temp1 = Object.keys(clients);
+        // console.log("value of temp 1 " + temp1);
+
+
+
+
+
+    });
+
+
+
+
 
     socket.on('add room', function (room) {
 
@@ -428,7 +537,7 @@ io.on('connection', function (socket) {
 
             //db call to get previous messages 
             //  mysql_connection.query('select chatmessages.usermessage, users.username from chatmessages INNER JOIN users ON chatmessages.userid = users.userid WHERE chatmessages.roomid = ?  ', [data.newroom.rid], function (err, result) {
-            
+
             var reply = JSON.stringify({
                 method: 'message',
                 sendType: 'sendToAllClientsInRoom',
@@ -478,14 +587,60 @@ io.on('connection', function (socket) {
                     callback(previousMessages);
                 }
             });
-
-
-
-
-
-
-
         });
+
+
+    socket.on('usertouser', function (data, callback) {
+        let independantpreviousMessages = null;
+        console.log("data" + JSON.stringify(data) + socket.room);
+        socket.leave(socket.room);
+
+        mysql_connection.query(`call getOneToOneMessage(?,?)`, [data.senderid, data.receiverid], function (err, result) {
+            if (err) {
+                console.log("in usertouser event" + err);
+                return;
+            }
+
+            if (result) {
+                console.log("in usertouser event" + JSON.stringify(result));
+                independantpreviousMessages = result;
+                callback(independantpreviousMessages);
+
+            }
+        })
+
+
+
+        //  var h = data.sendername + "" + data.receivername;
+        //  console.log("value of h" + h);
+        /* socket.emit('user joined', {
+            username: h,
+              utou: data
+ 
+          });    */
+
+
+    });
+
+
+    socket.on('getusers', function (data, callback) {
+        var usersList = null;
+        console.log(" In getusers");
+        mysql_connection.query(`call getAllUsers`, (err, result) => {
+            if (err) {
+                console.log(err);
+                return;
+
+            }
+            if (result) {
+                usersList = JSON.stringify(result);
+                callback(usersList);
+
+            }
+        });
+
+
+    });
 
     sub.on("subscribe", function (channel, count) {
         console.log("Subscribed to " + channel + ". Now subscribed to " + count + " channel(s).");

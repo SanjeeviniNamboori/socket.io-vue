@@ -17,16 +17,62 @@ DELIMITER ;
 
 
 
+
 DROP procedure IF exists VoltusWave.roomMessages;
 DELIMITER $$
 CREATE PROCEDURE VoltusWave.roomMessages
 ( IN p_roomid VARCHAR(45) ) 
 BEGIN
-SELECT * from VoltusWave.chatmessages INNER JOIN VoltusWave.users ON chatmessages.userid = users.userid                                   
+SELECT chatmessages.usermessage , users.username 
+FROM
+`chatmessages` 
+INNER JOIN 
+`users` ON `chatmessages`.`userid` = `users`.`userid`                                   
     
    
-    WHERE  roomid = p_roomid ; 
+    WHERE  `roomid` = p_roomid ; 
     
 end$$
 
 DELIMITER ;
+
+
+
+DROP procedure IF exists VoltusWave.roomsList;
+DELIMITER $$
+CREATE PROCEDURE VoltusWave.roomsList
+(  ) 
+BEGIN
+SELECT *                                   
+    
+    FROM   rooms;
+    
+    
+end$$
+
+DELIMITER ;
+
+
+DROP procedure IF exists VoltusWave.getOneToOneMessage;
+DELIMITER $$
+CREATE PROCEDURE VoltusWave.getOneToOneMessage
+( IN p_id INT(11) , p_id1 INT(11) ) 
+BEGIN
+SELECT *
+FROM
+`usertousermessages` 
+
+INNER JOIN 
+
+`users` ON `usertousermessages`.`senderid` = `users`.`userid`                         
+    
+   
+    WHERE  (`senderid` = p_id AND `receiverid` = p_id1)
+    OR 
+    (`receiverid` = p_id AND `senderid` = p_id1); 
+    
+end$$
+
+DELIMITER ;
+
+CALL getOneToOneMessage(1,2);
