@@ -35,12 +35,6 @@ var vm = new Vue({
       receiverid: null,
       receivername: null
 
-    },
-    styleObject: {
-      'color': null,
-      'border': '1px solid black',
-      'border-radius': '100%'
-
     }
 
 
@@ -57,8 +51,8 @@ var vm = new Vue({
         }
       });
     },
-    getUsersList: function (id) {
-      console.log("In get users list" + id);
+    getUsersList: function () {
+     // console.log("In get users list" + id);
       let scope = this;
       console.log("In get logged in users list");
       this.socket.emit('getusers', {}, function (output) {
@@ -67,16 +61,12 @@ var vm = new Vue({
 
         for (var n = 0; n < x.length; n++) {
           console.log(x[n].userid + x[n].username);
-          if (x[n].userid == id) {
-            scope.styleObject.color = '#008000';
-            console.log("Ingetusrslistif");
+         
+           
 
-            scope.userListDb.push({ "userid": x[n].userid, "username": x[n].username, "styleObject": scope.styleObject });
-          } else {
-            scope.styleObject.color = '#FFFFFF';
-            console.log("Ingetusrslistelse");
-            scope.userListDb.push({ "userid": x[n].userid, "username": x[n].username, "styleObject": scope.styleObject });
-          }
+            scope.userListDb.push({ "userid": x[n].userid, "username": x[n].username });
+          
+          
         }
 
       });
@@ -319,7 +309,7 @@ var vm = new Vue({
 
     scope.getRoomsList();
 
-    scope.getUsersList(scope.userid);
+    scope.getUsersList();
 
 
 

@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://unpkg.com/vue"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-  <link rel="stylesheet" href="public/font-awesome-4.7.0/css/font-awesome.min.css">
+ 
 </head>
 
 <body>
@@ -81,8 +81,7 @@
         <ul>
           <!-- <li v-for="user in userListDb" :id="user.userid" v-on:click="userChat(user)"><i class="fa fa-circle" style="color:aliceblue;border:1px solid black; border-radius:100%" aria-hidden="true"> </i>  {{user.username}}</li>  -->
           <li v-for="user in userListDb" :id="user.userid" v-on:click="userChat(user)">
-            <i class="fa fa-circle" :style="styleObject" aria-hidden="true">
-            </i> {{user.username}}</li>
+           {{user.username}}</li>
         </ul>
       </div>
 
