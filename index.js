@@ -18,6 +18,7 @@ var cookie = require('cookie');
 var cookieParser = require('cookie-parser');
 var dateandtime = new Date();
 var clients = {};
+
 server.listen(port, function () {
     console.log('Server listening at port %d', port);
 });
@@ -87,15 +88,15 @@ app.post('/api/addUser', function (request, response) {
     mysql_connection.query(`call add_users_data(?,?,?,?)`, [username, password, displayname, imageurl], function (error, result) {
         if (error) {
             console.log(error);
-          //  return;
-          response.status(400).send({"failure" : error});
+            //  return;
+            response.status(400).send({ "failure": error });
         }
 
         if (result) {
             console.log("User added successfully" + result);
 
             //response.render('login');
-            response.status(200).send({"success" : "user added successfully"});
+            response.status(200).send({ "success": "user added successfully" });
         }
     })
 
@@ -257,8 +258,9 @@ io.on('connection', function (socket) {
         pub.publish(socket.room, reply);
 
 
+        // To check if socket ids are being pushed into the array.
 
-        for (var property in clients) {
+       /* for (var property in clients) {
             // console.log("in for" + property[property]);
             if (property == socket.username) {
                 console.log("property name" + property + "value" + clients[socket.username]);
@@ -267,7 +269,7 @@ io.on('connection', function (socket) {
                 //    }
             }
 
-        }
+        }  */
 
 
 
@@ -350,10 +352,10 @@ io.on('connection', function (socket) {
 
     socket.on('independant message', function (data) {
         var temp = data.receivername;
-        var temp_S =data.sendername;
+        var temp_S = data.sendername;
         var temp_U = data.userMessage;
         console.log("temp value" + temp);
-       
+
         //  console.log("in independant messge" + temp);
         //  console.log("in independant messge" +temp.senderid +  temp.sendername + temp.receiverid + temp.receivername);
 
@@ -365,25 +367,49 @@ io.on('connection', function (socket) {
                 }
 
                 if (result) {
-                    var data ={
-                        username : temp_S,
-                         message :temp_U
-                     };
-                    
+                    var data = {
+                        username: temp_S,
+                        message: temp_U
+                    };
+
                     console.log("In independant message event" + result);
 
-                    if (clients.hasOwnProperty(temp)) {
+                    if (clients.hasOwnProperty(temp) && clients.hasOwnProperty(temp_S)) {
+                        var senderAndReceiverSocketIds = [];
                         console.log("in temp" + clients[temp]);
-                        var temp_array_socketids = clients[temp];
-                        for(var i=0; i<temp_array_socketids.length; i++){
-                            console.log("temp_array_socketids" +  temp_array_socketids[i]);
-                          //  socket.to(temp_array_socketids[i]).emit("new message", data);
-                        //  socket.broadcast.to(temp_array_socketids[i]).emit('message1', 'for your eyes only');
-                       // socket.emit('new message', data);
-                       io.sockets.in(temp_array_socketids[i]).emit("new message", data);
+                        console.log("in temp" + clients[temp_S]);
+                        var temp_array_socketids_receiver = clients[temp];
+                        var temp_array_socketids_sender = clients[temp_S];
+                        for (var i = 0; i < temp_array_socketids_receiver.length; i++) {
+                            senderAndReceiverSocketIds.push(temp_array_socketids_receiver[i]);
+
                         }
-                        
-                    } else {
+                        for (var j = 0; j < temp_array_socketids_sender.length; j++) {
+                            senderAndReceiverSocketIds.push(temp_array_socketids_sender[j]);
+
+                        }
+
+                        for (var h = 0; h < senderAndReceiverSocketIds.length; h++) {
+                            //  socket.broadcast.to(senderAndReceiverSocketIds[h]).emit('new message', data);
+                            io.sockets.in(senderAndReceiverSocketIds[h]).emit("new message", data);
+
+                        }
+                    }
+
+                    /* if (clients.hasOwnProperty(temp)) {
+                         console.log("in temp" + clients[temp]);
+                         var temp_array_socketids = clients[temp];
+                         for (var i = 0; i < temp_array_socketids.length; i++) {
+                             console.log("temp_array_socketids" + temp_array_socketids[i]);
+                             //  socket.to(temp_array_socketids[i]).emit("new message", data);
+                             //  socket.broadcast.to(temp_array_socketids[i]).emit('message1', 'for your eyes only');
+                             // socket.emit('new message', data);
+                             io.sockets.in(temp_array_socketids[i]).emit("new message", data);
+                         }
+ 
+                     } */
+
+                    else {
                         console.log("in else");
                     }
                 }

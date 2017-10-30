@@ -35,6 +35,12 @@ var vm = new Vue({
       receiverid: null,
       receivername: null
 
+    },
+    styleObject: {
+      'color': null,
+      'border': '1px solid black',
+      'border-radius': '100%'
+
     }
 
 
@@ -51,15 +57,26 @@ var vm = new Vue({
         }
       });
     },
-    getUsersList: function () {
+    getUsersList: function (id) {
+      console.log("In get users list" + id);
       let scope = this;
       console.log("In get logged in users list");
       this.socket.emit('getusers', {}, function (output) {
         var y = JSON.parse(output);
         var x = y[0];
+
         for (var n = 0; n < x.length; n++) {
           console.log(x[n].userid + x[n].username);
-          scope.userListDb.push({ "userid": x[n].userid, "username": x[n].username });
+          if (x[n].userid == id) {
+            scope.styleObject.color = '#008000';
+            console.log("Ingetusrslistif");
+
+            scope.userListDb.push({ "userid": x[n].userid, "username": x[n].username, "styleObject": scope.styleObject });
+          } else {
+            scope.styleObject.color = '#FFFFFF';
+            console.log("Ingetusrslistelse");
+            scope.userListDb.push({ "userid": x[n].userid, "username": x[n].username, "styleObject": scope.styleObject });
+          }
         }
 
       });
@@ -159,15 +176,15 @@ var vm = new Vue({
 
       //this.socket.emit('usertouser', person);
       this.socket.emit('usertouser', person, function (output) {
-       
-         console.log("In user chat message " +  JSON.stringify(output.data));
+
+        console.log("In user chat message " + JSON.stringify(output.data));
         scope.messagesArray.splice(0, scope.messagesArray.length);
         if (Array.isArray(output) && output[0] && Array.isArray(output[0])) {
           output[0].forEach(function (msgItem) {
             msgItem.color = scope.getUsernameColor(msgItem.username);
             msgItem.usermessage = msgItem.message;
             console.log(msgItem.color);
-            console.log("hey " +  msgItem.message);
+            console.log("hey " + msgItem.message);
             msgItem.type = "userMessage";
             scope.messagesArray.push(msgItem);
           });
@@ -205,7 +222,7 @@ var vm = new Vue({
           receivername: this.user2user.receivername
         }
 
-        
+
         this.socket.emit('independant message', data);
         this.userMessage = "";
 
@@ -302,7 +319,7 @@ var vm = new Vue({
 
     scope.getRoomsList();
 
-    scope.getUsersList();
+    scope.getUsersList(scope.userid);
 
 
 
@@ -321,7 +338,7 @@ var vm = new Vue({
       scope.messagesArray.push({ type: "userMessage", "username": data.username, "usermessage": data.message, "color": this.colorCode });
     });
 
-    this.socket.on('message1', function(data){
+    this.socket.on('message1', function (data) {
       console.log("in message1" + data);
     })
 
@@ -344,19 +361,19 @@ var vm = new Vue({
 
     this.socket.on('user joined', function (data) {
       console.log("user joined" + JSON.stringify(data));
-    /*  if (data.hasOwnProperty('utou')) {
-        var temp_data = data.utou;
-        console.log(temp_data);
-        scope.user2user.senderid = temp_data.senderid;
-        scope.user2user.sendername = temp_data.sendername;
-        scope.user2user.receiverid = temp_data.receiverid;
-        scope.user2user.receivername = temp_data.receivername;
-        var dataMessage = data.username + "joined";
-        scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
-      } else {  */
-        var dataMessage = data.username + "joined";
-        scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
-     /* }   */
+      /*  if (data.hasOwnProperty('utou')) {
+          var temp_data = data.utou;
+          console.log(temp_data);
+          scope.user2user.senderid = temp_data.senderid;
+          scope.user2user.sendername = temp_data.sendername;
+          scope.user2user.receiverid = temp_data.receiverid;
+          scope.user2user.receivername = temp_data.receivername;
+          var dataMessage = data.username + "joined";
+          scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
+        } else {  */
+      var dataMessage = data.username + "joined";
+      scope.messagesArray.push({ type: "userLogMessage", "message": dataMessage });
+      /* }   */
     });
 
 
